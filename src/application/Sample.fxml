@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.Group?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.stage.Screen?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane fx:id="mainPane"
+	xmlns="http://javafx.com/javafx/8.0.191"
+	xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="application.SampleController">
+	<fx:define>
+		<Screen fx:factory="getPrimary" fx:id="screen" />
+	</fx:define>
+	<top>
+		<VBox prefWidth="${screen.visualBounds.width}">
+			<Button fx:id="button" mnemonicParsing="false" text="Play"
+				BorderPane.alignment="CENTER" />
+			<Label fx:id="songInfo" text="" visible="true" prefWidth="${screen.visualBounds.width}"/>
+		</VBox>
+	</top>
+	<bottom>
+		<Label fx:id="info" text="Label" BorderPane.alignment="CENTER" />
+	</bottom>
+	<center>
+		<Group BorderPane.alignment="CENTER">
+			<children>
+				<Canvas fx:id="canvas" height="300"
+					width="${screen.visualBounds.width}" />
+			</children>
+		</Group>
+	</center>
+</BorderPane>
