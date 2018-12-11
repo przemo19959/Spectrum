@@ -41,10 +41,16 @@ public class SampleController {
 	@FXML
 	private Screen screen;
 	@FXML Label songInfo;
+	
+	public void setSongInfo(String input) {
+		songInfo.setText(input);
+	}
 
 	private void init() {
 		spectrumCommon.setParams(displayedBars, gc);
 		t1 = new PlayingThread(audioCommon);
+		songInfo.setText(t1.getSongInfo());
+		t1.start();
 		t2 = new ProcessingThread(audioCommon, dsp, spectrumCommon);
 		t3 = new Drawer(spectrumCommon);
 	}
