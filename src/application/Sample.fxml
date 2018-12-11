@@ -7,6 +7,10 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.stage.Screen?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Arc?>
+<?import javafx.scene.shape.Line?>
 
 <BorderPane fx:id="mainPane"
 	xmlns="http://javafx.com/javafx/8.0.191"
@@ -17,13 +21,44 @@
 	</fx:define>
 	<top>
 		<VBox prefWidth="${screen.visualBounds.width}">
-			<Button fx:id="button" mnemonicParsing="false" text="Play"
-				BorderPane.alignment="CENTER" />
-			<Label fx:id="songInfo" text="" visible="true" prefWidth="${screen.visualBounds.width}"/>
+			<Label fx:id="songInfo" text="" visible="true"
+				prefWidth="${screen.visualBounds.width}" />
 		</VBox>
 	</top>
 	<bottom>
-		<Label fx:id="info" text="Label" BorderPane.alignment="CENTER" />
+		<Group translateX="840">
+				<children>
+					<Group fx:id="playGroup">
+						<children>
+							<Circle fx:id="playButton" radius="22" fill="DARKORANGE"
+								stroke="BLACK" centerX="840" />
+							<Arc centerX="${playButton.centerX}" length="90"
+								startAngle="135" fill="BLACK" radiusX="14" radiusY="14"
+								type="ROUND" translateX="7" />
+						</children>
+					</Group>
+					<Group fx:id="pauseGroup" disable="true">
+						<children>
+							<Circle fx:id="pauseButton" radius="16" fill="DARKORANGE"
+								stroke="BLACK" centerX="${playButton.centerX-40}" />
+							<Line startX="${pauseButton.centerX-3}"
+								endX="${pauseButton.centerX-3}" fill="BLACK" startY="-6"
+								endY="6" strokeWidth="3" />
+							<Line startX="${pauseButton.centerX+3}"
+								endX="${pauseButton.centerX+3}" fill="BLACK" startY="-6"
+								endY="6" strokeWidth="3" />
+						</children>
+					</Group>
+					<Group fx:id="stopGroup" disable="true">
+						<children>
+							<Circle fx:id="stopButton" radius="16" fill="DARKORANGE"
+								stroke="BLACK" centerX="${playButton.centerX+40}" />
+							<Rectangle fill="BLACK" x="${stopButton.centerX-6}"
+								y="-6" width="12" height="12" />
+						</children>
+					</Group>
+				</children>
+			</Group>
 	</bottom>
 	<center>
 		<Group BorderPane.alignment="CENTER">

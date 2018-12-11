@@ -6,27 +6,23 @@ import application.dsp.DSP;
 import application.threads.Drawer;
 import application.threads.PlayingThread;
 import application.threads.ProcessingThread;
+import application.threads.SongState;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Screen;
+import javafx.scene.shape.Circle;
+import javafx.scene.Group;
 
 public class SampleController {
-
-	@FXML
-	private Label info;
-	@FXML
-	private Button button;
 	@FXML
 	private HBox box;
 	@FXML
 	private Canvas canvas;
-//	private int barWidth;
 	private int displayedBars=210;
 	private GraphicsContext gc;
 
@@ -42,6 +38,16 @@ public class SampleController {
 	private Screen screen;
 	@FXML Label songInfo;
 	
+	@FXML Circle playButton;
+	@FXML Circle stopButton;
+	@FXML Circle pauseButton;
+	private Circle[] circles;
+	
+	@FXML Group playGroup;
+	@FXML Group pauseGroup;
+	@FXML Group stopGroup;
+	private Group[] buttons;
+	
 	public void setSongInfo(String input) {
 		songInfo.setText(input);
 	}
@@ -56,27 +62,66 @@ public class SampleController {
 	}
 	
 	public void terminateThreads() {
-		t1.stop();
-		t2.stop();
-		t3.stop();
+		if(t1!=null)
+			t1.stop();
+		if(t2!=null)
+			t2.stop();
+		if(t3!=null)
+			t3.stop();
 	}
 
 	@FXML
 	private void initialize() {
-		info.setText("n: "+displayedBars);
+		buttons=new Group[] {playGroup,pauseGroup,stopGroup};
+		circles=new Circle[] {playButton,pauseButton,stopButton};
+		
+		addButtonsEffect();
 		
 		gc = canvas.getGraphicsContext2D();
 		gc.setFill(Color.BLACK);
 		gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight()); //wype³nij t³o na czarno
 		
-		button.setOnAction(val -> {
-			if(button.getText().equals("Play")) {
-				button.setText("Pause");
+		playGroup.setOnMouseClicked(val -> {
+			if(audioCommon.getState().equals(SongState.STOPPED))
 				init();// inicjalizacja
-			} else {
-				button.setText("Play");
-				terminateThreads();
+			else if(audioCommon.getState().equals(SongState.PAUSED)) {
+				t2.resume();
+				t3.start();
 			}
+			audioCommon.setState(SongState.PLAYING);
+			disableGroups(true, false, false);
 		});
+		
+		stopGroup.setOnMouseClicked(val->{
+			if(audioCommon.getState().equals(SongState.PLAYING))
+				terminateThreads();
+			audioCommon.setState(SongState.STOPPED);
+			disableGroups(false, true, true);
+		});
+		
+		pauseGroup.setOnMouseClicked(val->{
+			audioCommon.setState(SongState.PAUSED);
+			if(audioCommon.getState().equals(SongState.PAUSED)) {
+				t2.suspend();
+				t3.stop();
+			}
+			disableGroups(false, true, true);
+		});
+	}
+	
+	private void disableGroups(boolean play, boolean pause, boolean stop) {
+		playGroup.setDisable(play);
+		stopGroup.setDisable(pause);
+		pauseGroup.setDisable(stop);
+	}
+	
+	private void addButtonsEffect() {
+		for(int i=0;i<buttons.length;i++) {
+			final int iterator=i;
+			buttons[i].setOnMouseEntered(val->circles[iterator].setFill(Color.ORANGE));
+			buttons[i].setOnMouseExited(val->circles[iterator].setFill(Color.DARKORANGE));
+			buttons[i].setOnMousePressed(val->circles[iterator].setRadius(circles[iterator].getRadius()-4));
+			buttons[i].setOnMouseReleased(val->circles[iterator].setRadius(circles[iterator].getRadius()+4));
+		}
 	}
 }

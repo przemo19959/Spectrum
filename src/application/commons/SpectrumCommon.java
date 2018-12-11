@@ -16,6 +16,7 @@ public class SpectrumCommon {
 	private Semaphore processSem = new Semaphore(1);
 	
 	private boolean upToBottom=false;
+	private float attenuate=500;
 
 	public void setParams(int displayedBars, GraphicsContext gc) {
 		this.displayedBars = displayedBars;
@@ -33,7 +34,7 @@ public class SpectrumCommon {
 		try {
 			processSem.acquire();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 		this.spectrum = spectrum;
 		drawSem.release();
@@ -63,7 +64,7 @@ public class SpectrumCommon {
 	// rysowanie pasków z góry na dó³
 	private void drawUpToBottom(int level) {
 		for(int i = 0;i< displayedBars;i++) {
-			level = (int) (spectrum[i]/ 500.0);
+			level = (int) (spectrum[i]/ attenuate);
 			gc.setFill(Color.BLACK);
 			gc.setLineWidth(3);
 			gc.strokeRect(i* barWidth, 0, barWidth, level);
@@ -75,7 +76,7 @@ public class SpectrumCommon {
 	// rysowanie pasków z do³u do góry
 	private void drawBottomToUp(int level) {
 		for(int i = 0;i< displayedBars;i++) {
-			level = (int) (spectrum[i]/ 500.0);
+			level = (int)(spectrum[i]/ attenuate);
 			gc.setFill(Color.BLACK);
 			gc.setLineWidth(3);
 			gc.strokeRect(i* barWidth, canvasHeight- level, barWidth, level);

@@ -10,12 +10,15 @@ import application.dsp.DSP;
 public class ProcessingThread implements Runnable {
 	private Thread t;
 	private AtomicBoolean isSuspended=new AtomicBoolean(false);
-	private AtomicBoolean isRunning=new AtomicBoolean(true);
+	private AtomicBoolean isStopped=new AtomicBoolean(false);
 	
 	private AudioCommon audioCommon;
 	private DSP dsp;
 	
 	private SpectrumCommon spectrumCommon;
+	
+	//na potrzeby testów
+//	private long startTime;
 	
 	public ProcessingThread(AudioCommon audioCommon, DSP dsp, SpectrumCommon spectrumCommon) {
 		this.dsp=dsp;
@@ -26,41 +29,40 @@ public class ProcessingThread implements Runnable {
 	}
 	
 	public void stop() {
-		isRunning.set(false);
+		t.interrupt();
+		isStopped.set(true);
 	}
 	
 	public void suspend() {
-		isSuspended.set(true);;
+		isSuspended.set(true);
 	}
 	
 	public synchronized void resume() {
 		isSuspended.set(false);
 		notify();
 	}
-	
-	public synchronized void process() {
-		dsp.withSamples(audioCommon.getSamples());
+		
+	public void process() {
+		dsp.withSamples(audioCommon.getSamples());	//pobierz próbki
 		if(!dsp.isSamplesArrayNull()) {
-			dsp.calculateFFT();
+			dsp.calculateFFT();	//oblicz FFT
 		}
 	}
-	
-	public Thread.State getState() {
-		return t.getState();
-	}
-	
+		
 	@Override
 	public void run() {
 		try {
 			while(true) {
 				synchronized (this) {
-					while(isSuspended.get() && isRunning.get())
+					while(isSuspended.get())
 						wait();
 				}
-				if(!isRunning.get())
+				if(isStopped.get())
 					break;
+//				startTime=System.currentTimeMillis();
 				process();
-				spectrumCommon.updateSpectrum(dsp.getSpectrum(spectrumCommon.getDisplayedBars()));	//wczeœniej w process
+				spectrumCommon.updateSpectrum(dsp.getSpectrum(spectrumCommon.getDisplayedBars())); //aktualizuj widmo do rysowania
+//				System.out.println("Processor: "+(System.currentTimeMillis()-startTime)+"[ms]");
 			}
 		}catch(InterruptedException ie) {
 			ie.printStackTrace();
