@@ -1,5 +1,7 @@
 package application;
 
+import java.io.File;
+
 import application.commons.AudioCommon;
 import application.commons.SpectrumCommon;
 import application.dsp.DSP;
@@ -9,12 +11,15 @@ import application.threads.ProcessingThread;
 import application.threads.SongState;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
 import javafx.stage.Screen;
+import javafx.stage.Stage;
 import javafx.scene.shape.Circle;
 import javafx.scene.Group;
 
@@ -23,7 +28,7 @@ public class SampleController {
 	private HBox box;
 	@FXML
 	private Canvas canvas;
-	private int displayedBars=210;
+	private int displayedBars=420;
 	private GraphicsContext gc;
 
 	private AudioCommon audioCommon = new AudioCommon();
@@ -47,11 +52,16 @@ public class SampleController {
 	@FXML Group pauseGroup;
 	@FXML Group stopGroup;
 	private Group[] buttons;
+	@FXML Group fileGroup;
+	@FXML Circle fileButton;
+	
+	private Stage mainStage;
+	private FileChooser chooser=new FileChooser();
 	
 	public void setSongInfo(String input) {
 		songInfo.setText(input);
 	}
-
+	
 	private void init() {
 		spectrumCommon.setParams(displayedBars, gc);
 		t1 = new PlayingThread(audioCommon);
@@ -69,11 +79,26 @@ public class SampleController {
 		if(t3!=null)
 			t3.stop();
 	}
+	
+	public void setup(Stage stage) {
+		mainStage=stage;
+		fileGroup.setOnMouseClicked(val->{
+			File file=chooser.showOpenDialog(stage);
+			if(file!=null) {
+				String path=file.getAbsolutePath();
+				if(path.endsWith(".mp3") || path.endsWith(".wav")) {
+					if(t1.isAlive())
+						 t1.stop();
+					audioCommon.setAudioFilePath(path);
+				}
+			}
+		});
+	}
 
 	@FXML
 	private void initialize() {
-		buttons=new Group[] {playGroup,pauseGroup,stopGroup};
-		circles=new Circle[] {playButton,pauseButton,stopButton};
+		buttons=new Group[] {playGroup,pauseGroup,stopGroup,fileGroup};
+		circles=new Circle[] {playButton,pauseButton,stopButton,fileButton};
 		
 		addButtonsEffect();
 		

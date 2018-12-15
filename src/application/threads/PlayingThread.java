@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import javax.sound.midi.SysexMessage;
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -21,6 +20,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import org.tritonus.share.sampled.file.TAudioFileFormat;
 
 import application.commons.AudioCommon;
+import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 
 public class PlayingThread implements Runnable {
@@ -30,14 +30,14 @@ public class PlayingThread implements Runnable {
 	private AudioCommon audioCommon;
 	private SourceDataLine audioLine;
 
-//	private String audioFilePath = "D:/Audio.mp3";
+	// private String audioFilePath = "D:/Audio.mp3";
 	// private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/20Hz - to.wav";
-	private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/nowe9/David Guetta & Showtek - Your Love (Lyric video).mp3";
+//	private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/nowe9/David Guetta & Showtek - Your Love (Lyric video).mp3";
 	private static final int BUFFER_SIZE = 8192; // do FFT, liczba musi byæ N=2^k, k-liczba naturalna -> k=log2(N) dla 88200 mamy k=16,428...
 	// Test wp³ywu iloœci próbek na pracê aplikacji
 	// 32768 - Ok, ale tutaj z kolei, paski jakby nie by³y zsynchronizowane z dzwiêkiem
 	// 16384 - Ok, czyli brak zacinania
-	// 8192 - Ok
+	// 8192 - Ok ->22 lub 33ms w¹tek Player
 	// 4096 - Ok,ale drawer chodzi zbyt szybko i paski nawet nie nad¹¿aj¹ siê narysowaæ, a ju¿ pojawiaj¹ siê nowe wartoœci
 	// 2048 - Nie OK, to jest granica, czas zbierania próbek, jest tak krótki, ¿e pozosta³e w¹tki dzia³aj¹ d³u¿ej ni¿ samo granie próbek, w efekcie
 	// wystêpuj¹ przerwy w dzwiêku, dodanie funkcji trueFFT te¿ nic nie da³o
@@ -46,9 +46,9 @@ public class PlayingThread implements Runnable {
 	private File audioFile;
 	private AudioInputStream din;
 	private AudioFormat decodedFormat;
-	
-	//na potrzeby testów
-//	private long startTime;
+
+	// na potrzeby testów
+	private long startTime;
 
 	private StringConverter<Long> timeConverter = new StringConverter<Long>() {
 		private int[] times = new int[3];
@@ -70,7 +70,7 @@ public class PlayingThread implements Runnable {
 	public PlayingThread(AudioCommon audioCommon) {
 		this.audioCommon = audioCommon;
 		t = new Thread(this, "Player");
-		loadFile(audioFilePath);
+		loadFile(audioCommon.getAudioFilePath());
 	}
 
 	private void loadFile(String path) {
@@ -82,6 +82,10 @@ public class PlayingThread implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public boolean isAlive() {
+		return t.isAlive();
 	}
 
 	public void stop() {
@@ -114,12 +118,7 @@ public class PlayingThread implements Runnable {
 	private void getAudioLine() throws UnsupportedAudioFileException, IOException, LineUnavailableException {
 		AudioInputStream in = AudioSystem.getAudioInputStream(audioFile);
 		AudioFormat baseFormat = in.getFormat();
-		decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED,
-		                                            baseFormat.getSampleRate(), 16,
-		                                            baseFormat.getChannels(),
-		                                            baseFormat.getChannels()* 2,
-		                                            baseFormat.getSampleRate(),
-													false);
+		decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, baseFormat.getSampleRate(), 16, baseFormat.getChannels(), baseFormat.getChannels()* 2, baseFormat.getSampleRate(), false);
 		din = AudioSystem.getAudioInputStream(decodedFormat, in);
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class, decodedFormat);
 		audioLine = (SourceDataLine) AudioSystem.getLine(info);
@@ -142,16 +141,17 @@ public class PlayingThread implements Runnable {
 		din.close();
 		System.out.println("Playback completed.");
 	}
-	
+
 	private void playSong() throws IOException {
 		int bytesRead = -1;
-		while (isRunning.get() && (bytesRead = din.read(bytesBuffer, 0, bytesBuffer.length))!= -1) {
-//			startTime=System.currentTimeMillis();
+		while (isRunning.get()) {
+			bytesRead = din.read(bytesBuffer, 0, BUFFER_SIZE);
+			if(bytesRead== -1)
+				break;
 			audioCommon.withSamples(bytesBuffer);
 			synchronized (audioLine) {
 				audioLine.write(bytesBuffer, 0, bytesRead);
 			}
-//			System.out.println("Player: "+(System.currentTimeMillis()-startTime)+"[ms]");
 		}
 	}
 
@@ -173,6 +173,7 @@ public class PlayingThread implements Runnable {
 	@Override
 	public void run() {
 		play();
+		
 		System.out.println(Thread.currentThread().getName()+ " terminated");
 	}
 }

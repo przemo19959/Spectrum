@@ -1,10 +1,15 @@
 package application.threads;
 
 import application.commons.SpectrumCommon;
-import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
-public class Drawer extends AnimationTimer{
+public class Drawer{
 	private SpectrumCommon spectrumCommon;
+	private Timeline drawingTimer=new Timeline(new KeyFrame(Duration.millis(10), val->{
+		spectrumCommon.drawSpectrum();
+	}));
 	
 	//na potrzeby testów
 //	private long startTime;
@@ -12,19 +17,18 @@ public class Drawer extends AnimationTimer{
 	public Drawer(SpectrumCommon spectrumCommon) {
 		super();
 		this.spectrumCommon=spectrumCommon;
-		this.start();
+		drawingTimer.setAutoReverse(true);
+		drawingTimer.setCycleCount(Timeline.INDEFINITE);
+		drawingTimer.playFromStart();
+	}
+	
+	public void start() {
+		drawingTimer.playFromStart();
 	}
 				
 	public void stop() {
-		super.stop();
+		drawingTimer.stop();
 		spectrumCommon.clearSpectrum();
 		System.out.println("Drawer terminated");
-	}
-	
-	@Override
-	public void handle(long now) {
-//		startTime=System.currentTimeMillis();
-		spectrumCommon.drawSpectrum();
-//		System.out.println("Drawer: "+(System.currentTimeMillis()-startTime)+"[ms]");
-	}
+	}	
 }

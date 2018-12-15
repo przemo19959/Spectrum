@@ -7,10 +7,19 @@ import application.threads.SongState;
 
 public class AudioCommon {
 	private byte[] audioSamples;
+	private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/nowe9/David Guetta & Showtek - Your Love (Lyric video).mp3";
 	private SongState state=SongState.STOPPED;
 	private Semaphore playingSem = new Semaphore(1);
 	private Semaphore processSem = new Semaphore(0);
 	
+	public String getAudioFilePath() {
+		return audioFilePath;
+	}
+
+	public void setAudioFilePath(String audioFilePath) {
+		this.audioFilePath = audioFilePath;
+	}
+
 	public SongState getState() {
 		return state;
 	}

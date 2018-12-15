@@ -57,6 +57,14 @@
 								y="-6" width="12" height="12" />
 						</children>
 					</Group>
+					<Group fx:id="fileGroup">
+						<children>
+							<Circle fx:id="fileButton" radius="16" fill="DARKORANGE"
+								stroke="BLACK" centerX="${playButton.centerX+80}" />
+							<Arc centerX="${fileButton.centerX}" length="90" startAngle="225" fill="BLACK" radiusX="10" radiusY="10" type="ROUND" translateY="-7"/>
+							<Line startX="${fileButton.centerX+5}" endX="${fileButton.centerX-5}" fill="BLACK" startY="6" endY="6" strokeWidth="3"/>
+						</children>
+					</Group>
 				</children>
 			</Group>
 	</bottom>

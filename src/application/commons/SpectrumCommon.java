@@ -16,7 +16,7 @@ public class SpectrumCommon {
 	private Semaphore processSem = new Semaphore(1);
 	
 	private boolean upToBottom=false;
-	private float attenuate=500;
+	private float attenuate=250;
 
 	public void setParams(int displayedBars, GraphicsContext gc) {
 		this.displayedBars = displayedBars;
