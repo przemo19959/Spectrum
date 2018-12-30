@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 
 public class SpectrumCommon {
 	private int[] spectrum;
+	private int[] oldSpectrum;
 	private int displayedBars;
 	private int barWidth;
 	private int canvasHeight;
@@ -17,6 +18,7 @@ public class SpectrumCommon {
 	
 	private boolean upToBottom=false;
 	private float attenuate=250;
+	private int decayValue=5;
 
 	public void setParams(int displayedBars, GraphicsContext gc) {
 		this.displayedBars = displayedBars;
@@ -24,6 +26,7 @@ public class SpectrumCommon {
 		this.barWidth = (int) (gc.getCanvas().getWidth()/ displayedBars);
 		this.canvasHeight = (int) gc.getCanvas().getHeight();
 		this.canvasWidth = (int) gc.getCanvas().getWidth();
+		oldSpectrum=new int[displayedBars];
 	}
 
 	public int getDisplayedBars() {
@@ -46,7 +49,7 @@ public class SpectrumCommon {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		if(gc!= null&& spectrum!= null)
+		if(gc!= null && spectrum!= null)
 			draw();
 		processSem.release();
 	}
@@ -65,11 +68,14 @@ public class SpectrumCommon {
 	private void drawUpToBottom(int level) {
 		for(int i = 0;i< displayedBars;i++) {
 			level = (int) (spectrum[i]/ attenuate);
+			if(level<oldSpectrum[i])
+				level=oldSpectrum[i]-decayValue;
 			gc.setFill(Color.BLACK);
 			gc.setLineWidth(3);
 			gc.strokeRect(i* barWidth, 0, barWidth, level);
 			gc.setFill(Color.ORANGE);
 			gc.fillRect(i* barWidth, 0, barWidth, level);
+			oldSpectrum[i]=level;
 		}
 	}
 
@@ -77,11 +83,14 @@ public class SpectrumCommon {
 	private void drawBottomToUp(int level) {
 		for(int i = 0;i< displayedBars;i++) {
 			level = (int)(spectrum[i]/ attenuate);
+			if(level<oldSpectrum[i])
+				level=oldSpectrum[i]-decayValue;
 			gc.setFill(Color.BLACK);
 			gc.setLineWidth(3);
 			gc.strokeRect(i* barWidth, canvasHeight- level, barWidth, level);
 			gc.setFill(Color.ORANGE);
 			gc.fillRect(i* barWidth, canvasHeight- level, barWidth, level);
+			oldSpectrum[i]=level;
 		}
 	}
 
