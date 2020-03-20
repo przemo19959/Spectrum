@@ -11,7 +11,6 @@ import application.threads.ProcessingThread;
 import application.threads.SongState;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.canvas.Canvas;
@@ -23,38 +22,44 @@ import javafx.stage.Stage;
 import javafx.scene.shape.Circle;
 import javafx.scene.Group;
 
+/**
+ * Responsibilites:
+ * <ul>
+ * <li></li>
+ * </ul>
+ * @author hex
+ *
+ */
 public class SampleController {
-	@FXML
-	private HBox box;
-	@FXML
-	private Canvas canvas;
+	//@formatter:off
+	@FXML private HBox box;
+	@FXML private Canvas canvas;
+	@FXML private BorderPane mainPane;
+	@FXML private Screen screen;
+	@FXML private Label songInfo;
+	@FXML private Circle playButton;
+	@FXML private Circle stopButton;
+	@FXML private Circle pauseButton;
+	@FXML private Group playGroup;
+	@FXML private Group pauseGroup;
+	@FXML private Group stopGroup;
+	@FXML private Group fileGroup;
+	@FXML private Circle fileButton;
+	//@formatter:on
+	
 	private int displayedBars=420;
 	private GraphicsContext gc;
+	
+	private PlayingThread t1;
+	private ProcessingThread t2;
+	private Drawer t3;
 
 	private AudioCommon audioCommon = new AudioCommon();
 	private SpectrumCommon spectrumCommon=new SpectrumCommon();
 	private DSP dsp = new DSP();
-	private PlayingThread t1;
-	private ProcessingThread t2;
-	private Drawer t3;
-	@FXML
-	private BorderPane mainPane;
-	@FXML
-	private Screen screen;
-	@FXML Label songInfo;
 	
-	@FXML Circle playButton;
-	@FXML Circle stopButton;
-	@FXML Circle pauseButton;
 	private Circle[] circles;
-	
-	@FXML Group playGroup;
-	@FXML Group pauseGroup;
-	@FXML Group stopGroup;
 	private Group[] buttons;
-	@FXML Group fileGroup;
-	@FXML Circle fileButton;
-	
 	private Stage mainStage;
 	private FileChooser chooser=new FileChooser();
 	
@@ -65,7 +70,7 @@ public class SampleController {
 	private void init() {
 		spectrumCommon.setParams(displayedBars, gc);
 		t1 = new PlayingThread(audioCommon);
-		songInfo.setText(t1.getSongInfo());
+		songInfo.setText(t1.getAudioInfo());
 		t1.start();
 		t2 = new ProcessingThread(audioCommon, dsp, spectrumCommon);
 		t3 = new Drawer(spectrumCommon);
@@ -99,12 +104,11 @@ public class SampleController {
 	private void initialize() {
 		buttons=new Group[] {playGroup,pauseGroup,stopGroup,fileGroup};
 		circles=new Circle[] {playButton,pauseButton,stopButton,fileButton};
-		
 		addButtonsEffect();
 		
 		gc = canvas.getGraphicsContext2D();
 		gc.setFill(Color.BLACK);
-		gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight()); //wype³nij t³o na czarno
+		gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight()); //fill with black color
 		
 		playGroup.setOnMouseClicked(val -> {
 			if(audioCommon.getState().equals(SongState.STOPPED))

@@ -4,48 +4,36 @@ import java.util.Arrays;
 import java.util.concurrent.Semaphore;
 
 import application.threads.SongState;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
 
 public class AudioCommon {
 	private byte[] audioSamples;
+	@Setter
+	@Getter
 	private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/nowe9/David Guetta & Showtek - Your Love (Lyric video).mp3";
+	@Setter
+	@Getter
 	private SongState state=SongState.STOPPED;
 	private Semaphore playingSem = new Semaphore(1);
 	private Semaphore processSem = new Semaphore(0);
 	
-	public String getAudioFilePath() {
-		return audioFilePath;
-	}
-
-	public void setAudioFilePath(String audioFilePath) {
-		this.audioFilePath = audioFilePath;
-	}
-
-	public SongState getState() {
-		return state;
-	}
-
-	public void setState(SongState state) {
-		this.state = state;
-	}
-
+	@SneakyThrows
 	public void withSamples(byte[] samples) {
-		try {
-			playingSem.acquire();	//w¹tek graj¹cy wchodzi
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		audioSamples = Arrays.copyOf(samples, samples.length);
-		processSem.release();	//miejsce dla w¹tku przetwarzaj¹cego
+		playingSem.acquire();	//playing thread enters
+		audioSamples = Arrays.copyOf(samples, samples.length); //copy from playing thread
+		processSem.release();	//processing thread is allowed to take action
 	}
 
 	public byte[] getSamples() {
 		try {
-			processSem.acquire();	//w¹tek przetwarzaj¹cy stoi
+			processSem.acquire();	//processing thread enters
 		} catch (InterruptedException e) {
 //			e.printStackTrace();
 		}
-		playingSem.release();
-		return audioSamples;
+		playingSem.release();//playing thread is allowed to take action
+		return audioSamples; //samples for processing thread
 	}
 
 }

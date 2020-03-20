@@ -20,8 +20,9 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import org.tritonus.share.sampled.file.TAudioFileFormat;
 
 import application.commons.AudioCommon;
-import javafx.stage.FileChooser;
-import javafx.util.StringConverter;
+import application.misc.TimeConverter;
+import lombok.Getter;
+import lombok.SneakyThrows;
 
 public class PlayingThread implements Runnable {
 	private Thread t;
@@ -32,40 +33,24 @@ public class PlayingThread implements Runnable {
 
 	// private String audioFilePath = "D:/Audio.mp3";
 	// private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/20Hz - to.wav";
-//	private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/nowe9/David Guetta & Showtek - Your Love (Lyric video).mp3";
-	private static final int BUFFER_SIZE = 8192; // do FFT, liczba musi byæ N=2^k, k-liczba naturalna -> k=log2(N) dla 88200 mamy k=16,428...
-	// Test wp³ywu iloœci próbek na pracê aplikacji
-	// 32768 - Ok, ale tutaj z kolei, paski jakby nie by³y zsynchronizowane z dzwiêkiem
+	//	private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/nowe9/David Guetta & Showtek - Your Love (Lyric video).mp3";
+	private static final int BUFFER_SIZE = 8192; // do FFT, liczba musi byï¿½ N=2^k, k-liczba naturalna -> k=log2(N) dla 88200 mamy k=16,428...
+	// Test wpï¿½ywu iloï¿½ci prï¿½bek na pracï¿½ aplikacji
+	// 32768 - Ok, ale tutaj z kolei, paski jakby nie byï¿½y zsynchronizowane z dzwiï¿½kiem
 	// 16384 - Ok, czyli brak zacinania
-	// 8192 - Ok ->22 lub 33ms w¹tek Player
-	// 4096 - Ok,ale drawer chodzi zbyt szybko i paski nawet nie nad¹¿aj¹ siê narysowaæ, a ju¿ pojawiaj¹ siê nowe wartoœci
-	// 2048 - Nie OK, to jest granica, czas zbierania próbek, jest tak krótki, ¿e pozosta³e w¹tki dzia³aj¹ d³u¿ej ni¿ samo granie próbek, w efekcie
-	// wystêpuj¹ przerwy w dzwiêku, dodanie funkcji trueFFT te¿ nic nie da³o
+	// 8192 - Ok ->22 lub 33ms wï¿½tek Player
+	// 4096 - Ok,ale drawer chodzi zbyt szybko i paski nawet nie nadï¿½ï¿½ajï¿½ siï¿½ narysowaï¿½, a juï¿½ pojawiajï¿½ siï¿½ nowe wartoï¿½ci
+	// 2048 - Nie OK, to jest granica, czas zbierania prï¿½bek, jest tak krï¿½tki, ï¿½e pozostaï¿½e wï¿½tki dziaï¿½ajï¿½ dï¿½uï¿½ej niï¿½ samo granie prï¿½bek, w efekcie
+	// wystï¿½pujï¿½ przerwy w dzwiï¿½ku, dodanie funkcji trueFFT teï¿½ nic nie daï¿½o
 	private byte[] bytesBuffer = new byte[BUFFER_SIZE];
+	@Getter
 	private String audioInfo;
 	private File audioFile;
 	private AudioInputStream din;
 	private AudioFormat decodedFormat;
 
-	// na potrzeby testów
+	// na potrzeby testï¿½w
 	private long startTime;
-
-	private StringConverter<Long> timeConverter = new StringConverter<Long>() {
-		private int[] times = new int[3];
-		@Override
-		public String toString(Long object) {
-			double timeInSeconds = object* 1e-6;
-			times[0] = (int) (timeInSeconds/ 3600); // iloœæ godzin
-			times[1] = (int) ((timeInSeconds- times[0]* 3600)/ 60); // iloœæ minut
-			times[2] = (int) (timeInSeconds- times[0]* 3600- times[1]* 60); // iloœæ sekund
-			return String.format("%02d:%02d:%02d", times[0], times[1], times[2]);
-		}
-
-		@Override
-		public Long fromString(String string) {
-			return null;
-		}
-	};
 
 	public PlayingThread(AudioCommon audioCommon) {
 		this.audioCommon = audioCommon;
@@ -73,20 +58,16 @@ public class PlayingThread implements Runnable {
 		loadFile(audioCommon.getAudioFilePath());
 	}
 
+	@SneakyThrows
 	private void loadFile(String path) {
 		audioFile = new File(path);
-		try {
-			extractFileInfo(audioFile);
-		} catch (UnsupportedAudioFileException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		extractFileInfo(audioFile);
 	}
 
-	public boolean isAlive() {
-		return t.isAlive();
-	}
+	//@formatter:off
+	public boolean isAlive() {return t.isAlive();}
+	public void start() {t.start();}
+	//@formatter:on
 
 	public void stop() {
 		synchronized (audioLine) {
@@ -95,41 +76,32 @@ public class PlayingThread implements Runnable {
 		isRunning.set(false);
 	}
 
-	public void start() {
-		t.start();
-	}
-
 	private void extractFileInfo(File file) throws UnsupportedAudioFileException, IOException {
 		AudioFileFormat baseFileFormat = AudioSystem.getAudioFileFormat(file);
 		if(baseFileFormat instanceof TAudioFileFormat) {
 			List<String> items = new ArrayList<>();
 			Map<String, Object> properties = ((TAudioFileFormat) baseFileFormat).properties();
-			items.add(properties.get("author")+ " - "+ properties.get("title"));
-			items.add(timeConverter.toString((long) properties.get("duration")));
-			items.add(String.format("%.1f kHz", ((int) properties.get("mp3.frequency.hz")/ 1000.0)));
+			items.add(properties.get("author") + " - " + properties.get("title"));
+			items.add(new TimeConverter().toString((long) properties.get("duration")));
+			items.add(String.format("%.1f kHz", ((int) properties.get("mp3.frequency.hz") / 1000.0)));
 			audioInfo = items.stream().collect(Collectors.joining(" :: "));
 		}
-	}
-
-	public String getSongInfo() {
-		return audioInfo;
 	}
 
 	private void getAudioLine() throws UnsupportedAudioFileException, IOException, LineUnavailableException {
 		AudioInputStream in = AudioSystem.getAudioInputStream(audioFile);
 		AudioFormat baseFormat = in.getFormat();
-		decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, baseFormat.getSampleRate(), 16, baseFormat.getChannels(), baseFormat.getChannels()* 2, baseFormat.getSampleRate(), false);
+		decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, baseFormat.getSampleRate(), 16, baseFormat.getChannels(), baseFormat.getChannels() * 2, baseFormat.getSampleRate(), false);
 		din = AudioSystem.getAudioInputStream(decodedFormat, in);
-		DataLine.Info info = new DataLine.Info(SourceDataLine.class, decodedFormat);
-		audioLine = (SourceDataLine) AudioSystem.getLine(info);
+		audioLine = (SourceDataLine) AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, decodedFormat));
 	}
 
 	private void openAudioLine() throws LineUnavailableException {
 		synchronized (audioLine) {
 			audioLine.open(decodedFormat, BUFFER_SIZE);
 			audioLine.start();
-			System.out.println("Playback started.");
 		}
+		System.out.println("Playback started.");
 	}
 
 	private void closeAudioLine() throws IOException {
@@ -145,35 +117,28 @@ public class PlayingThread implements Runnable {
 	private void playSong() throws IOException {
 		int bytesRead = -1;
 		while (isRunning.get()) {
-			bytesRead = din.read(bytesBuffer, 0, BUFFER_SIZE);
-			if(bytesRead== -1)
+			bytesRead = din.read(bytesBuffer, 0, BUFFER_SIZE); //read from stream
+			if(bytesRead == -1)
 				break;
-			audioCommon.withSamples(bytesBuffer);
+			audioCommon.withSamples(bytesBuffer); //send data to audioCommons
 			synchronized (audioLine) {
-				audioLine.write(bytesBuffer, 0, bytesRead);
+				audioLine.write(bytesBuffer, 0, bytesRead); //play samples
 			}
 		}
 	}
 
+	@SneakyThrows
 	private void play() {
-		try {
-			getAudioLine();
-			openAudioLine();
-			playSong();
-			closeAudioLine();
-		} catch (UnsupportedAudioFileException ex) {
-			System.out.println("The specified audio file is not supported.");
-		} catch (LineUnavailableException ex) {
-			System.out.println("Audio line for playing back is unavailable.");
-		} catch (IOException ex) {
-			System.out.println("Error playing the audio file.");
-		}
+		getAudioLine();
+		openAudioLine();
+		playSong();
+		closeAudioLine();
 	}
 
 	@Override
 	public void run() {
+		System.out.println(t.getName() + " started...");
 		play();
-		
-		System.out.println(Thread.currentThread().getName()+ " terminated");
+		System.out.println(t.getName() + " terminated");
 	}
 }

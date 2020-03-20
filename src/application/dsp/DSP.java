@@ -3,63 +3,63 @@ package application.dsp;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-//dodanie uœredniania nic nie da³o
+// dodanie uï¿½redniania nic nie daï¿½o
 public class DSP {
 	private byte[] samples;
 	private int N;
 	private Complex[] complexSamples;
 	private int[] spectrum;
-	private boolean isTrueFFTOn=true;
+	private boolean isTrueFFTOn = true;
 
 	public DSP withSamples(byte[] samples) {
 		this.samples = samples;
 		this.N = samples.length;
 		complexSamples = new Complex[N];
-		spectrum=new int[N];
+		spectrum = new int[N];
 		return this;
 	}
-	
-	//TODO Ogólnie dodaæ jeszcze funkcjê, która dodatkowo filtruje próbki przed podaniem na FFT(mo¿e zastosowanie okna)
-	//dodanie rysowania uœrednionego - próba dodania wyg³adzenia
-	
+
+	//TODO Ogï¿½lnie dodaï¿½ jeszcze funkcjï¿½, ktï¿½ra dodatkowo filtruje prï¿½bki przed podaniem na FFT(moï¿½e zastosowanie okna)
+	//dodanie rysowania uï¿½rednionego - prï¿½ba dodania wygï¿½adzenia
+
 	public DSP turnTrueFFT(boolean isOn) {
-		this.isTrueFFTOn=isOn;
+		this.isTrueFFTOn = isOn;
 		return this;
 	}
 
 	public boolean isSamplesArrayNull() {
-		return (samples== null) ? true : false;
+		return samples == null;
 	}
 
-	// na potrzeby testów
+	// na potrzeby testï¿½w
 	public boolean equalsComplexSamples(Complex[] samples) {
-		if(samples.length!= this.samples.length)
+		if(samples.length != this.samples.length)
 			return false;
-		for(int i = 0;i< N;i++) {
+		for(int i = 0;i < N;i++) {
 			if(!complexSamples[i].equals(samples[i]))
 				return false;
 		}
 		return true;
 	}
-	
-	//Krok 1 - filtrowanie próbek
+
+	//Krok 1 - filtrowanie prï¿½bek
 	private void filter() {
-		
+
 	}
 
 	// krok 2 FFT
 	private void rearrangeSamples() {
 		int a = 1;
-		for(int b = 1;b< N;b++) {
-			if(b< a) {
-				byte tmp = samples[a- 1];
-				samples[a- 1] = samples[b- 1];
-				samples[b- 1] = tmp;
+		for(int b = 1;b < N;b++) {
+			if(b < a) {
+				byte tmp = samples[a - 1];
+				samples[a - 1] = samples[b - 1];
+				samples[b - 1] = tmp;
 			}
-			int c = (int) (N/ 2.0);
-			while (c< a) {
+			int c = (int) (N / 2.0);
+			while (c < a) {
 				a -= c;
-				c = (int) (c/ 2.0);
+				c = (int) (c / 2.0);
 			}
 			a += c;
 		}
@@ -67,75 +67,75 @@ public class DSP {
 
 	// krok 3 FFT
 	public void realToComplex() {
-		for(int i = 0;i< N;i++) {
+		for(int i = 0;i < N;i++) {
 			complexSamples[i] = new Complex(samples[i], 0);
 		}
 	}
 
-	// krok 4 FFT - w³aœciwe FFT
+	// krok 4 FFT - wï¿½aï¿½ciwe FFT
 	private void fft() {
-		for(int e = 1;e<= (int) (Math.log10(N)/ Math.log10(2));e++) {
+		for(int e = 1;e <= (int) (Math.log10(N) / Math.log10(2));e++) {
 			int L = (int) Math.pow(2, e);
-			int M = (int) Math.pow(2, e- 1);
+			int M = (int) Math.pow(2, e - 1);
 			Complex Wi = new Complex(1, 0);
-			Complex W = new Complex((float) Math.cos((2* Math.PI)/ L), (float) (-Math.sin((2* Math.PI)/ L)));
-			for(int m = 1;m<= M;m++) {
-				for(int g = m;g<= N;g = g+ L) {
-					int d = g+ M;
-					Complex tmp = complexSamples[d- 1].multiply(Wi);
-					complexSamples[d- 1] = complexSamples[g- 1].minus(tmp);
-					complexSamples[g- 1] = complexSamples[g- 1].addTo(tmp);
+			Complex W = new Complex((float) Math.cos((2 * Math.PI) / L), (float) (-Math.sin((2 * Math.PI) / L)));
+			for(int m = 1;m <= M;m++) {
+				for(int g = m;g <= N;g = g + L) {
+					int d = g + M;
+					Complex tmp = complexSamples[d - 1].multiply(Wi);
+					complexSamples[d - 1] = complexSamples[g - 1].minus(tmp);
+					complexSamples[g - 1] = complexSamples[g - 1].addTo(tmp);
 				}
 				Wi = Wi.multiply(W);
 			}
 		}
 	}
 
-	//sygna³ rzeczywisty, ma widmo symetryczne wzglêdem fp/2, wiêc nie ma potrzeby liczenia drugiej po³owy
-	//st¹d ta wersja FFT liczy jedynie po³owê widma, bowiem tylko to nas interesuje.
+	//sygnaï¿½ rzeczywisty, ma widmo symetryczne wzglï¿½dem fp/2, wiï¿½c nie ma potrzeby liczenia drugiej poï¿½owy
+	//stï¿½d ta wersja FFT liczy jedynie poï¿½owï¿½ widma, bowiem tylko to nas interesuje.
 	private void trueFFT() {
-		for(int e = 1;e<= (int) (Math.log10(N)/ Math.log10(2));e++) {
+		for(int e = 1;e <= (int) (Math.log10(N) / Math.log10(2));e++) {
 			int L = (int) Math.pow(2, e);
-			int M = (int) Math.pow(2, e- 1);
+			int M = (int) Math.pow(2, e - 1);
 			Complex Wi = new Complex(1, 0);
-			Complex W = new Complex((float) Math.cos((2* Math.PI)/ L), (float) (-Math.sin((2* Math.PI)/ L)));
-			for(int m = 1;m<= M;m++) {
-				for(int g = m;g<= N;g = g+ L) {
-					int d = g+ M;
-					Complex tmp = complexSamples[d- 1].multiply(Wi);
-					if(e==(int) (Math.log10(N)/ Math.log10(2)) && m>1)
-						complexSamples[g- 1] = complexSamples[g- 1].addTo(tmp);
+			Complex W = new Complex((float) Math.cos((2 * Math.PI) / L), (float) (-Math.sin((2 * Math.PI) / L)));
+			for(int m = 1;m <= M;m++) {
+				for(int g = m;g <= N;g = g + L) {
+					int d = g + M;
+					Complex tmp = complexSamples[d - 1].multiply(Wi);
+					if(e == (int) (Math.log10(N) / Math.log10(2)) && m > 1)
+						complexSamples[g - 1] = complexSamples[g - 1].addTo(tmp);
 					else {
-						complexSamples[d- 1] = complexSamples[g- 1].minus(tmp);
-						complexSamples[g- 1] = complexSamples[g- 1].addTo(tmp);
+						complexSamples[d - 1] = complexSamples[g - 1].minus(tmp);
+						complexSamples[g - 1] = complexSamples[g - 1].addTo(tmp);
 					}
 				}
 				Wi = Wi.multiply(W);
 			}
 		}
-		complexSamples=Arrays.copyOf(complexSamples, (int)(complexSamples.length/2.0)+1);
+		complexSamples = Arrays.copyOf(complexSamples, (int) (complexSamples.length / 2.0) + 1);
 	}
-	
+
 	//Krok 5- obliczenie widma
 	private void calculateSpectrum() {
-		for(int i = 0;i< complexSamples.length;i++) {
-			spectrum[i]=complexSamples[i].abs();
+		for(int i = 0;i < complexSamples.length;i++) {
+			spectrum[i] = complexSamples[i].abs();
 		}
 	}
 
-	// na potrzeby testów
+	// na potrzeby testï¿½w
 	public boolean spectrumEquals(int[] spectrum) {
-		if(spectrum.length!= this.complexSamples.length)
+		if(spectrum.length != this.complexSamples.length)
 			return false;
-		for(int i = 0;i< complexSamples.length;i++) {
-			if(this.spectrum[i]!= spectrum[i])
+		for(int i = 0;i < complexSamples.length;i++) {
+			if(this.spectrum[i] != spectrum[i])
 				return false;
 		}
 		return true;
 	}
 
 	public int[] getSpectrum(int n) {
-		if(spectrum!= null)
+		if(spectrum != null)
 			return Arrays.copyOf(spectrum, n);
 		return null;
 	}
