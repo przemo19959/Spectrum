@@ -1,4 +1,4 @@
-package application.dsp;
+package application.dspService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,7 +12,7 @@ public class Complex {
 	public Complex minus(Complex num) {return new Complex(re-num.re, im-num.im);}
 	public Complex multiply(Complex num) {return new Complex(re*num.re-im*num.im, re*num.im+im*num.re);}
 	public int abs() {return (int)Math.sqrt(Math.pow(re, 2)+Math.pow(im, 2));}
-	public static boolean floatEqualWithError(float a, float b, float error) {return Math.abs(a - b) < error;}
+	private static boolean floatEqualWithError(float a, float b, float error) {return Math.abs(a - b) < error;}
 	//@formatter:on
 
 	public Complex divideBy(Complex num) {

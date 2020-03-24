@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import application.dspService.Complex;
+
 class ComplexSpec {
 
 	private Complex num1;
@@ -71,7 +73,7 @@ class ComplexSpec {
 	@Test
 	@DisplayName("abs return right value")
 	void test9() {
-		//funkcja licz¹ca modu³, zwraca czêœæ ca³kowit¹, dla uproszczenia
+		//funkcja liczï¿½ca moduï¿½, zwraca czï¿½ï¿½ caï¿½kowitï¿½, dla uproszczenia
 		assertThat(num1.abs()).isEqualTo((int)25.9422f);
 	}
 

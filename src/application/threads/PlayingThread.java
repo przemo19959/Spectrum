@@ -26,7 +26,7 @@ import lombok.SneakyThrows;
 
 public class PlayingThread implements Runnable {
 	private Thread t;
-	private AtomicBoolean isRunning = new AtomicBoolean(true);
+	private AtomicBoolean terminate = new AtomicBoolean(false);
 
 	private AudioCommon audioCommon;
 	private SourceDataLine audioLine;
@@ -34,7 +34,7 @@ public class PlayingThread implements Runnable {
 	// private String audioFilePath = "D:/Audio.mp3";
 	// private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/20Hz - to.wav";
 	//	private String audioFilePath = "G:/Pobieranie/Pobieranie/Muzyka/nowe9/David Guetta & Showtek - Your Love (Lyric video).mp3";
-	private static final int BUFFER_SIZE = 8192; // do FFT, liczba musi by� N=2^k, k-liczba naturalna -> k=log2(N) dla 88200 mamy k=16,428...
+	public static final int BUFFER_SIZE = 8192; // do FFT, liczba musi by� N=2^k, k-liczba naturalna -> k=log2(N) dla 88200 mamy k=16,428...
 	// Test wp�ywu ilo�ci pr�bek na prac� aplikacji
 	// 32768 - Ok, ale tutaj z kolei, paski jakby nie by�y zsynchronizowane z dzwi�kiem
 	// 16384 - Ok, czyli brak zacinania
@@ -61,7 +61,7 @@ public class PlayingThread implements Runnable {
 	@SneakyThrows
 	private void loadFile(String path) {
 		audioFile = new File(path);
-		extractFileInfo(audioFile);
+		audioInfo = extractFileInfo(audioFile);
 	}
 
 	//@formatter:off
@@ -69,14 +69,7 @@ public class PlayingThread implements Runnable {
 	public void start() {t.start();}
 	//@formatter:on
 
-	public void stop() {
-		synchronized (audioLine) {
-			audioLine.stop();
-		}
-		isRunning.set(false);
-	}
-
-	private void extractFileInfo(File file) throws UnsupportedAudioFileException, IOException {
+	private String extractFileInfo(File file) throws UnsupportedAudioFileException, IOException {
 		AudioFileFormat baseFileFormat = AudioSystem.getAudioFileFormat(file);
 		if(baseFileFormat instanceof TAudioFileFormat) {
 			List<String> items = new ArrayList<>();
@@ -84,60 +77,65 @@ public class PlayingThread implements Runnable {
 			items.add(properties.get("author") + " - " + properties.get("title"));
 			items.add(new TimeConverter().toString((long) properties.get("duration")));
 			items.add(String.format("%.1f kHz", ((int) properties.get("mp3.frequency.hz") / 1000.0)));
-			audioInfo = items.stream().collect(Collectors.joining(" :: "));
+			return items.stream().collect(Collectors.joining(" :: "));
 		}
+		return "no info";
 	}
 
 	private void getAudioLine() throws UnsupportedAudioFileException, IOException, LineUnavailableException {
 		AudioInputStream in = AudioSystem.getAudioInputStream(audioFile);
 		AudioFormat baseFormat = in.getFormat();
-		decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, baseFormat.getSampleRate(), 16, baseFormat.getChannels(), baseFormat.getChannels() * 2, baseFormat.getSampleRate(), false);
+		decodedFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, baseFormat.getSampleRate(), 16, baseFormat.getChannels(), //
+										baseFormat.getChannels() * 2, baseFormat.getSampleRate(), false);
 		din = AudioSystem.getAudioInputStream(decodedFormat, in);
 		audioLine = (SourceDataLine) AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, decodedFormat));
 	}
 
-	private void openAudioLine() throws LineUnavailableException {
+	private void openAudioLine(SourceDataLine audioLine, AudioFormat audioFormat) throws LineUnavailableException {
 		synchronized (audioLine) {
-			audioLine.open(decodedFormat, BUFFER_SIZE);
+			audioLine.open(audioFormat, BUFFER_SIZE);
 			audioLine.start();
 		}
-		System.out.println("Playback started.");
 	}
 
-	private void closeAudioLine() throws IOException {
+	private void closeAudioLine(SourceDataLine audioLine) throws IOException {
 		synchronized (audioLine) {
 			audioLine.drain();
 			audioLine.stop();
 			audioLine.close();
 		}
 		din.close();
-		System.out.println("Playback completed.");
 	}
 
 	private void playSong() throws IOException {
 		int bytesRead = -1;
-		while (isRunning.get()) {
+		while (terminate.get() == false) {
 			bytesRead = din.read(bytesBuffer, 0, BUFFER_SIZE); //read from stream
 			if(bytesRead == -1)
 				break;
 			audioCommon.withSamples(bytesBuffer); //send data to audioCommons
-			synchronized (audioLine) {
+			if(terminate.get() == false)
 				audioLine.write(bytesBuffer, 0, bytesRead); //play samples
-			}
 		}
+		audioLine.stop();
+	}
+
+	public void stop() {
+		terminate.set(true);
+		t.interrupt();
 	}
 
 	@SneakyThrows
 	private void play() {
 		getAudioLine();
-		openAudioLine();
+		openAudioLine(audioLine, decodedFormat);
 		playSong();
-		closeAudioLine();
+		closeAudioLine(audioLine);
 	}
 
 	@Override
 	public void run() {
-		System.out.println(t.getName() + " started...");
+		System.out.println(t.getName() + " started");
 		play();
 		System.out.println(t.getName() + " terminated");
 	}

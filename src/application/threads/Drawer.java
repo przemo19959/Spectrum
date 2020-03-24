@@ -11,7 +11,7 @@ public class Drawer{
 		spectrumCommon.drawSpectrum();
 	}));
 	
-	//na potrzeby testów
+	//na potrzeby testï¿½w
 //	private long startTime;
 	
 	public Drawer(SpectrumCommon spectrumCommon) {
@@ -19,11 +19,12 @@ public class Drawer{
 		this.spectrumCommon=spectrumCommon;
 		drawingTimer.setAutoReverse(true);
 		drawingTimer.setCycleCount(Timeline.INDEFINITE);
-		drawingTimer.playFromStart();
+		start();
 	}
 	
 	public void start() {
 		drawingTimer.playFromStart();
+		System.out.println("Drawer started");
 	}
 				
 	public void stop() {

@@ -4,65 +4,61 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import application.commons.AudioCommon;
 import application.commons.SpectrumCommon;
-import application.dsp.DSP;
+import application.dspService.DSP;
 import lombok.SneakyThrows;
 
 public class ProcessingThread implements Runnable {
 	private Thread t;
-	private AtomicBoolean isSuspended = new AtomicBoolean(false);
-	private AtomicBoolean isStopped = new AtomicBoolean(false);
+	private AtomicBoolean suspend = new AtomicBoolean(false);
+	private AtomicBoolean terminate = new AtomicBoolean(false);
 
-	private AudioCommon audioCommon;
 	private DSP dsp;
-
+	private AudioCommon audioCommon;
 	private SpectrumCommon spectrumCommon;
 
-	//na potrzeby test�w
-	//	private long startTime;
-
-	public ProcessingThread(AudioCommon audioCommon, DSP dsp, SpectrumCommon spectrumCommon) {
-		this.dsp = dsp;
+	public ProcessingThread(AudioCommon audioCommon, SpectrumCommon spectrumCommon) {
+		this.dsp = new DSP();
 		this.audioCommon = audioCommon;
 		this.spectrumCommon = spectrumCommon;
 		t = new Thread(this, "Processor");
 		t.start();
 	}
-
-	public void stop() {
-		t.interrupt();
-		isStopped.set(true);
-	}
-
-	public void suspend() {
-		isSuspended.set(true);
-	}
-
+	
+	//@formatter:off
+	public void stop() {terminate.set(true);resume();}
+	public void suspend() {suspend.set(true);}
 	public synchronized void resume() {
-		isSuspended.set(false);
-		notify();
+		if(suspend.get()) {
+			suspend.set(false);
+			notify();
+		}
 	}
+	//@formatter:on
 
-	public void process() {
-		dsp.withSamples(audioCommon.getSamples()); //pobierz pr�bki
-		if(dsp.isSamplesArrayNull()==false)
-			dsp.calculateFFT(); //oblicz FFT
+	private void process() {
+		dsp.withSamples(audioCommon.getSamples());
+		if(dsp.isSamplesArrayNull()==false) {
+			dsp.calculateFFT();
+			spectrumCommon.updateSpectrum(dsp.getSpectrum(spectrumCommon.getDisplayedBars()));
+		}
 	}
 
 	@Override
 	@SneakyThrows
 	public void run() {
-		System.out.println(t.getName() + " started...");
+		System.out.println(t.getName() + " started");
 		while (true) {
 			synchronized (this) {
-				while (isSuspended.get())
+				while (suspend.get())
 					wait();
+				
 			}
-			if(isStopped.get())
+//			System.out.println("a");
+			if(terminate.get()) {
+//				System.out.println("wyszło");
 				break;
-			//				startTime=System.currentTimeMillis();
+			}
 			process();
-			spectrumCommon.updateSpectrum(dsp.getSpectrum(spectrumCommon.getDisplayedBars())); //aktualizuj widmo do rysowania
-			//				System.out.println("Processor: "+(System.currentTimeMillis()-startTime)+"[ms]");
 		}
 		System.out.println(t.getName() + " terminated");
 	}

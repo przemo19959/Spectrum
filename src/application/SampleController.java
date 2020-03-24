@@ -4,7 +4,6 @@ import java.io.File;
 
 import application.commons.AudioCommon;
 import application.commons.SpectrumCommon;
-import application.dsp.DSP;
 import application.threads.Drawer;
 import application.threads.PlayingThread;
 import application.threads.ProcessingThread;
@@ -56,43 +55,37 @@ public class SampleController {
 
 	private AudioCommon audioCommon = new AudioCommon();
 	private SpectrumCommon spectrumCommon=new SpectrumCommon();
-	private DSP dsp = new DSP();
 	
 	private Circle[] circles;
 	private Group[] buttons;
 	private Stage mainStage;
 	private FileChooser chooser=new FileChooser();
 	
-	public void setSongInfo(String input) {
-		songInfo.setText(input);
-	}
-	
 	private void init() {
 		spectrumCommon.setParams(displayedBars, gc);
 		t1 = new PlayingThread(audioCommon);
-		songInfo.setText(t1.getAudioInfo());
 		t1.start();
-		t2 = new ProcessingThread(audioCommon, dsp, spectrumCommon);
+		
+		songInfo.setText(t1.getAudioInfo());
+		
+		t2 = new ProcessingThread(audioCommon, spectrumCommon);
 		t3 = new Drawer(spectrumCommon);
 	}
 	
-	public void terminateThreads() {
-		if(t1!=null)
-			t1.stop();
-		if(t2!=null)
-			t2.stop();
-		if(t3!=null)
-			t3.stop();
-	}
+	void terminateThreads() {//@formatter:off
+		if(t1!=null)t1.stop();
+		if(t2!=null)t2.stop();
+		if(t3!=null)t3.stop();
+	}//@formatter:on
 	
-	public void setup(Stage stage) {
+	void setup(Stage stage) {
 		mainStage=stage;
 		fileGroup.setOnMouseClicked(val->{
 			File file=chooser.showOpenDialog(stage);
 			if(file!=null) {
 				String path=file.getAbsolutePath();
 				if(path.endsWith(".mp3") || path.endsWith(".wav")) {
-					if(t1.isAlive())
+					if(t1!=null && t1.isAlive())
 						 t1.stop();
 					audioCommon.setAudioFilePath(path);
 				}

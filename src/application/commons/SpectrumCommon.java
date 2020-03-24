@@ -4,93 +4,71 @@ import java.util.concurrent.Semaphore;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import lombok.Getter;
+import lombok.SneakyThrows;
 
 public class SpectrumCommon {
+	private static final boolean DRAW_FROM_UP_TO_BOTTOM = false;
+
 	private int[] spectrum;
 	private int[] oldSpectrum;
+
+	@Getter
 	private int displayedBars;
 	private int barWidth;
 	private int canvasHeight;
 	private int canvasWidth;
 	private GraphicsContext gc;
+
 	private Semaphore drawSem = new Semaphore(0);
 	private Semaphore processSem = new Semaphore(1);
-	
-	private boolean upToBottom=false;
-	private float attenuate=250;
-	private int decayValue=5;
+
+	private float attenuate = 250;
+	private int decayValue = 5;
 
 	public void setParams(int displayedBars, GraphicsContext gc) {
 		this.displayedBars = displayedBars;
 		this.gc = gc;
-		this.barWidth = (int) (gc.getCanvas().getWidth()/ displayedBars);
+		this.barWidth = (int) (gc.getCanvas().getWidth() / displayedBars);
 		this.canvasHeight = (int) gc.getCanvas().getHeight();
 		this.canvasWidth = (int) gc.getCanvas().getWidth();
-		oldSpectrum=new int[displayedBars];
-	}
-
-	public int getDisplayedBars() {
-		return displayedBars;
+		oldSpectrum = new int[displayedBars];
 	}
 
 	public void updateSpectrum(int[] spectrum) {
 		try {
 			processSem.acquire();
 		} catch (InterruptedException e) {
-//			e.printStackTrace();
 		}
 		this.spectrum = spectrum;
 		drawSem.release();
 	}
 
+	@SneakyThrows
 	public void drawSpectrum() {
-		try {
-			drawSem.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		if(gc!= null && spectrum!= null)
+		drawSem.acquire();
+		if(gc != null && spectrum != null)
 			draw();
 		processSem.release();
 	}
 
 	private void draw() {
 		int level = 0;
-		// t³o na czarno, aby zacz¹æ rysowaæ s³upki od nowa, inaczej s³upki bêd¹ nachodziæ na siebie z ka¿dego wywo³ania funkcji draw()
-		clearSpectrum();
-		if(upToBottom)
-			drawUpToBottom(level);
-		else
-			drawBottomToUp(level);
+		clearSpectrum();//otherwise, bars will ovelap from previous drawing
+		drawBars(level, DRAW_FROM_UP_TO_BOTTOM);
 	}
 
-	// rysowanie pasków z góry na dó³
-	private void drawUpToBottom(int level) {
-		for(int i = 0;i< displayedBars;i++) {
-			level = (int) (spectrum[i]/ attenuate);
-			if(level<oldSpectrum[i])
-				level=oldSpectrum[i]-decayValue;
+	private void drawBars(int level, boolean upToBottom) {
+		for(int i = 0;i < displayedBars;i++) {
+			level = (int) (spectrum[i] / attenuate);
+			if(level < oldSpectrum[i])
+				level = oldSpectrum[i] - decayValue;
 			gc.setFill(Color.BLACK);
 			gc.setLineWidth(3);
-			gc.strokeRect(i* barWidth, 0, barWidth, level);
+			gc.strokeRect(i * barWidth, upToBottom ? 0 : (canvasHeight - level), barWidth, level);
 			gc.setFill(Color.ORANGE);
-			gc.fillRect(i* barWidth, 0, barWidth, level);
-			oldSpectrum[i]=level;
-		}
-	}
-
-	// rysowanie pasków z do³u do góry
-	private void drawBottomToUp(int level) {
-		for(int i = 0;i< displayedBars;i++) {
-			level = (int)(spectrum[i]/ attenuate);
-			if(level<oldSpectrum[i])
-				level=oldSpectrum[i]-decayValue;
-			gc.setFill(Color.BLACK);
-			gc.setLineWidth(3);
-			gc.strokeRect(i* barWidth, canvasHeight- level, barWidth, level);
-			gc.setFill(Color.ORANGE);
-			gc.fillRect(i* barWidth, canvasHeight- level, barWidth, level);
-			oldSpectrum[i]=level;
+			gc.fillRect(i * barWidth, upToBottom ? 0 : (canvasHeight - level), barWidth, level);
+			oldSpectrum[i] = level;
 		}
 	}
 

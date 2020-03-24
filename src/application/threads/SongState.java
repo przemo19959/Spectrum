@@ -1,5 +1,5 @@
 package application.threads;
 
 public enum SongState {
-	STOPPED,PLAYING,PAUSED,RESUMED;
+	STOPPED,PLAYING,PAUSED;
 }

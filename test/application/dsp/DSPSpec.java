@@ -9,6 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import application.dspService.Complex;
+import application.dspService.DSP;
+
 class DSPSpec {
 	private DSP dsp=new DSP();
 	private byte[] data1= {23,34,54,67,78,89,25,121,2,45,23,43,44,56,67,22};
